@@ -1,27 +1,28 @@
-
 from flask import Flask, render_template, request, send_from_directory
-import pandas as pd
+import csv
 import os
 
 app = Flask(__name__)
-CERT_DIR = "certificados"
+CERT_DIR = 'certificados'
 
-@app.route("/", methods=["GET", "POST"])
+@app.route('/', methods=['GET', 'POST'])
 def index():
     certificado = None
-    if request.method == "POST":
-        folio = request.form["folio"]
-        codigo = request.form["codigo"]
-        df = pd.read_csv("certificados.csv")
-        match = df[(df["folio"] == folio) & (df["codigo"] == codigo)]
-        if not match.empty:
-            certificado = match.iloc[0]["nombre_archivo"]
-    return render_template("index.html", certificado=certificado)
+    if request.method == 'POST':
+        folio = request.form.get('folio', '')
+        codigo = request.form.get('codigo', '')
+        with open('certificados.csv', newline='', encoding='utf-8') as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                if row['folio'] == folio and row['codigo'] == codigo:
+                    certificado = row['nombre_archivo']
+                    break
+    return render_template('index.html', certificado=certificado)
 
-@app.route("/ver/<path:filename>")
-def ver_pdf(filename):
+@app.route('/ver/<filename>')
+def ver(filename):
     return send_from_directory(CERT_DIR, filename)
 
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(debug=True, port=port)
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
